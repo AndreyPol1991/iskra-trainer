@@ -392,6 +392,8 @@
   }
   async function run(sql) { await ready(); return execOn(sandbox, sql); }
   async function reset() { await ready(); try { sandbox.close(); } catch (e) { } sandbox = fresh(); }
+  // запрос на свежей копии базы: изменения (INSERT, UPDATE, DELETE) не попадают в общую песочницу
+  async function runFresh(sql) { await ready(); const d = fresh(); try { return execOn(d, sql); } finally { d.close(); } }
   // Сравнение результата студента с эталоном: каждый запрос — на свежей копии базы. Имена столбцов не важны,
   // важны число столбцов и строки (по умолчанию как множество; ordered:true — с учётом порядка).
   const normV = v => v == null ? null : typeof v === 'number' ? Math.round(v * 100) / 100 : /^-?\d+(\.\d+)?$/.test(String(v).trim()) ? Math.round(parseFloat(v) * 100) / 100 : String(v).trim();
@@ -448,7 +450,7 @@
 
   TR.db = {
     SCHEMA, ENUMS, NOW, SQLJS,
-    ddl, ready, run, reset, compare, resultHTML, schemaHTML,
+    ddl, ready, run, runFresh, reset, compare, resultHTML, schemaHTML,
     table: name => SCHEMA.find(t => t.name === name) || null,
     enumRu: (k, v) => { const e = (ENUMS[k] || []).find(x => x[0] === v); return e ? e[1] : v; },
     // что заложено в данные специально — для заданий «найдите проблему в данных»

@@ -232,7 +232,9 @@
       s += '</svg>';
       el.innerHTML = `<div class="board bpmn-board">${s}</div>`;
     }
-    el.addEventListener('click', e => { const g = e.target.closest('[data-node]'); if (g && cfg.onClick) cfg.onClick(g.dataset.node); });
+    // один слушатель на контейнер: при повторном ui.bpmn на том же el клик не срабатывает дважды
+    el.__bpmnCfg = cfg;
+    if (!el.__bpmnClick) { el.__bpmnClick = true; el.addEventListener('click', e => { const g = e.target.closest('[data-node]'), c = el.__bpmnCfg; if (g && c && c.onClick) c.onClick(g.dataset.node); }); }
     draw();
     return { redraw(next) { if (next) Object.assign(cfg, next); draw(); }, get cfg() { return cfg; } };
   };
