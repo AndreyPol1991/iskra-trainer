@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#000}iframe{border:0;display:block}</style>
+<script>
+  // Для скриншотов: включает режим преподавателя (все задания открыты) и тему, затем открывает тренажёр.
+  // Узкие экраны (w < 600) рисуются в iframe нужной ширины: headless Chrome не умеет окно уже ~500 px.
+  const p = new URLSearchParams(location.search);
+  try {
+    localStorage.setItem('amp-iskra-trainer-v1', JSON.stringify({ v: 1, name: 'Скриншот', group: '', trust: 50, xp: 0, facts: {}, notes: '', stages: {}, decisions: [], log: [], teacher: true, started: null }));
+    localStorage.setItem('amp-iskra-theme', p.get('theme') === 'light' ? 'light' : 'dark');
+  } catch (e) { }
+  const w = +p.get('w') || 0, h = +p.get('h') || 6000;
+  if (w && w < 600) document.write(`<iframe src="../index.html${location.hash}" style="width:${w}px;height:${h}px"></iframe>`);
+  else location.replace('../index.html' + location.hash);
+</script>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>RUNNING</title></head>
+<body>
+<!-- Автотест тренировок. Запуск: bash _dev/test.sh [id-тренировки ...]. Рисует каждую тренировку в режиме преподавателя,
+     монтирует все задания, проверяет: пустой ответ не засчитывается, эталон засчитывается, ничего не падает. -->
+<div class="app" id="app" style="display:none">
+  <header class="topbar"><button id="menuBtn"></button><button id="homeBtn"></button>
+    <span id="hudTrust"></span><span id="hudXp"></span><button id="nbBtn"></button><span id="nbCnt"></span><svg><path id="hudPulse"/></svg>
+    <button id="sysBtn"></button><button id="glBtn"></button><button id="repBtn"></button><button id="themeBtn"></button></header>
+  <div class="main"><nav class="route" id="route"></nav><main class="view" id="view"></main></div>
+</div>
+<aside class="drawer" id="nb"><div id="nbBody"></div></aside>
+<div id="toasts"></div>
+<pre id="out"></pre>
+<script>
+  window.__errs = [];
+  window.addEventListener('error', e => window.__errs.push('window.onerror: ' + e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno));
+  window.addEventListener('unhandledrejection', e => window.__errs.push('unhandledrejection: ' + (e.reason && e.reason.message || e.reason)));
+  const ce = console.error.bind(console);
+  console.error = (...a) => { window.__errs.push('console.error: ' + a.map(x => x && x.stack ? x.stack.split('\n').slice(0, 3).join(' | ') : String(x)).join(' ')); ce(...a); };
+  try { localStorage.clear(); } catch (e) { }
+</script>
+<script src="../js/core.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/ui-diagram.js"></script>
+<script src="../js/ui-bpmn.js"></script>
+<script src="../js/db.js"></script>
+<script src="../js/facts.js"></script>
+<script src="../js/m1-software.js"></script>
+<script src="../js/m1-sdlc.js"></script>
+<script src="../js/m1-team.js"></script>
+<script src="../js/m1-process.js"></script>
+<script src="../js/m1-devs.js"></script>
+<script src="../js/m1-qa.js"></script>
+<script src="../js/m2-types.js"></script>
+<script src="../js/m2-stories.js"></script>
+<script src="../js/m2-nfr.js"></script>
+<script src="../js/m2-reqwork.js"></script>
+<script src="../js/m2-business.js"></script>
+<script src="../js/m2-priority.js"></script>
+<script src="../js/m3-cjm.js"></script>
+<script src="../js/m3-ui.js"></script>
+<script src="../js/m3-bpmn1.js"></script>
+<script src="../js/m3-bpmn2.js"></script>
+<script src="../js/m3-seq.js"></script>
+<script src="../js/m3-comp.js"></script>
+<script src="../js/m4-db.js"></script>
+<script src="../js/m4-erd.js"></script>
+<script src="../js/m4-design.js"></script>
+<script src="../js/m4-dict.js"></script>
+<script src="../js/m4-sql.js"></script>
+<script src="../js/m4-interview.js"></script>
+<script src="../js/x-system.js"></script>
+<script src="../js/app.js"></script>
+<script>
+(async function () {
+  const TR = window.TR, out = [];
+  const want = new URLSearchParams(location.search).get('stage');
+  const ids = want ? want.split(',') : TR.LESSONS.map(l => l.id);
+  const R = { stages: {}, missing: [], globalErrors: [] };
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + ms + ' мс')), ms))]);
+  if (TR.db && ids.some(id => /^m4-/.test(id))) { try { await withTimeout(TR.db.ready(), 20000); R.db = 'ok'; } catch (e) { R.db = 'ERROR: ' + e.message; } }
+  R.globalErrors = window.__errs.splice(0);
+  TR.setTeacher(true);
+  for (const id of ids) {
+    const def = TR.stageById(id);
+    if (!def) { R.missing.push(id); continue; }
+    const S = R.stages[id] = { title: def.title, errors: [], warnings: [], tasks: [] };
+    const err = m => S.errors.push(m), warn = m => S.warnings.push(m);
+    if (!def.intro || !def.intro.length) warn('нет intro');
+    if (!def.outro) warn('нет outro');
+    if (!def.when) warn('нет when');
+    if (!def.glossary || def.glossary.length < 5) warn('в glossary меньше 5 терминов: ' + (def.glossary || []).length);
+    const theory = def.tasks.filter(TR.isTheory), practice = TR.practiceTasks(def);
+    if (theory.length < 2) warn('теоретических разделов how-* меньше 2: ' + theory.length);
+    if (practice.length < 4) warn('практических заданий меньше 4: ' + practice.length);
+    const ids2 = new Set(); def.tasks.forEach(t => { if (ids2.has(t.id)) err('повтор id задания ' + t.id); ids2.add(t.id); });
+    theory.forEach(t => (t.covers || []).forEach(c => { if (!practice.some(p => p.id === c)) warn(`${t.id}.covers ссылается на несуществующее задание ${c}`); }));
+    (def.facts || []).forEach(f => { if (!TR.FACTS[f]) err('нет такого факта ' + f); });
+    // страница целиком в режиме преподавателя — монтируются все задания
+    try { TR.go(id); } catch (e) { err('TR.go упал: ' + e.message); }
+    await new Promise(r => setTimeout(r, 60));
+    const cards = Array.from(document.querySelectorAll('#view section.task'));
+    if (cards.length !== def.tasks.length) warn(`на странице ${cards.length} карточек заданий, в определении ${def.tasks.length}`);
+    cards.forEach(c => { const n = c.querySelector('.note.bad .ttl'); if (n && /Ошибка подхода/.test(n.textContent)) err('render упал в карточке ' + c.dataset.tid + ': ' + c.querySelector('.note.bad').textContent.slice(0, 200)); });
+    const ctxStub = (ans) => ({ stage: def, el: document.createElement('div'), ans, state: { ans }, readonly: false, teacher: true, result: null, save() { }, rerender() { }, ready() { }, decide() { }, score() { }, toast() { }, facts: TR.facts, check() { } });
+    for (const t of practice) {
+      const T = { id: t.id, title: t.title };
+      S.tasks.push(T);
+      if (!t.explain) warn(`${t.id}: нет explain (разбор)`);
+      if (!t.lead) warn(`${t.id}: нет lead (ui.brief)`);
+      if (!t.check && !t.free) warn(`${t.id}: нет check — задание засчитывается кнопкой «Готово»`);
+      if (t.check && !t.reference) warn(`${t.id}: есть check, но нет reference`);
+      if (t.check && !t.report) warn(`${t.id}: нет report (ответ в отчёт преподавателю)`);
+      const blank = t.blank ? TR.clone(t.blank()) : {};
+      if (t.check) {
+        try {
+          let r = t.check(TR.clone(blank), ctxStub(blank)); if (r && r.then) r = await withTimeout(r, 15000);
+          T.blank = r ? { ok: !!r.ok, score: r.score } : null;
+          if (r && r.ok) err(`${t.id}: пустой ответ засчитывается (blank → ok)`);
+        } catch (e) { err(`${t.id}: check(blank) упал: ${e.message}`); }
+      }
+      if (t.reference) {
+        let ref;
+        try { ref = TR.clone(t.reference()); } catch (e) { err(`${t.id}: reference() упал: ${e.message}`); }
+        if (ref && t.check) {
+          try {
+            let r = t.check(TR.clone(ref), ctxStub(ref)); if (r && r.then) r = await withTimeout(r, 20000);
+            T.ref = r ? { ok: !!r.ok, score: r.score, summary: String(r.summary || '').replace(/<[^>]+>/g, '').slice(0, 160) } : null;
+            if (!r || !r.ok) err(`${t.id}: эталон НЕ засчитывается: ${T.ref && T.ref.summary}`);
+            else if (r.score != null && r.score < 0.999) warn(`${t.id}: эталон набирает ${Math.round(r.score * 100)}%`);
+          } catch (e) { err(`${t.id}: check(reference) упал: ${e.message}`); }
+          try { const box = document.createElement('div'); document.body.appendChild(box); t.render(box, Object.assign(ctxStub(ref), { readonly: true })); box.remove(); } catch (e) { err(`${t.id}: render(эталон, readonly) упал: ${e.message}`); }
+          if (t.report) { try { t.report(ref); } catch (e) { err(`${t.id}: report упал: ${e.message}`); } }
+        }
+      }
+    }
+    await new Promise(r => setTimeout(r, 30));
+    window.__errs.splice(0).forEach(e => err(e));
+  }
+  // обложка и отчёт
+  try { TR.go(''); TR.reportMd(); } catch (e) { R.globalErrors.push('обложка/отчёт: ' + e.message); }
+  window.__errs.splice(0).forEach(e => R.globalErrors.push(e));
+  const nErr = Object.values(R.stages).reduce((s, x) => s + x.errors.length, 0) + R.globalErrors.length;
+  R.summary = `stages=${Object.keys(R.stages).length} missing=${R.missing.length} errors=${nErr}`;
+  document.getElementById('out').textContent = '@@' + 'JSON@@' + JSON.stringify(R, null, 1) + '@@' + 'END@@';
+  document.title = 'DONE';
+})();
+</script>
+</body>
+</html>

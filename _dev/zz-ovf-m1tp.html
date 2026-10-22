@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><body><pre id="out"></pre>
+<script>
+const p = new URLSearchParams(location.search);
+try { localStorage.setItem('amp-iskra-trainer-v1', JSON.stringify({ v: 1, name: 'x', group: '', trust: 50, xp: 0, facts: {}, notes: '', stages: {}, decisions: [], log: [], teacher: true, started: null })); } catch (e) {}
+const f = document.createElement('iframe'); f.style.width = '390px'; f.style.height = '3000px'; f.src = '../index.html#s-' + p.get('id'); document.body.appendChild(f);
+f.onload = () => setTimeout(() => {
+  const d = f.contentDocument, W = d.documentElement.clientWidth, res = ['clientW=' + W + ' scrollW=' + d.documentElement.scrollWidth];
+  const all = Array.from(d.querySelectorAll('#view *'));
+  const bad = all.filter(e => e.getBoundingClientRect().width > W + 20 && !Array.from(e.children).some(c => c.getBoundingClientRect().width > W + 20));
+  // keep only outermost offenders
+  const top = bad;
+  top.slice(0, 25).forEach(e => res.push(e.tagName + '.' + (e.className && e.className.baseVal === undefined ? e.className : '') + ' right=' + Math.round(e.getBoundingClientRect().right) + ' w=' + Math.round(e.getBoundingClientRect().width) + ' :: ' + (e.textContent || '').slice(0, 60).replace(/\s+/g, ' ')));
+  document.getElementById('out').textContent = '@@' + res.join('\n') + '@@';
+}, 1500);
+</script>

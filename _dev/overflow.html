@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>RUNNING</title><pre id="out"></pre>
+<iframe id="f" style="width:390px;height:800px;border:0"></iframe>
+<script>
+// Ищет элементы, вылезающие за ширину 390 px. Запуск: bash _dev/overflow.sh <id|home>
+const id = new URLSearchParams(location.search).get('id') || 'home';
+localStorage.setItem('amp-iskra-trainer-v1', JSON.stringify({ v: 1, name: '', group: '', trust: 50, xp: 0, facts: {}, notes: '', stages: {}, decisions: [], log: [], teacher: true, started: null }));
+const f = document.getElementById('f');
+f.src = '../index.html' + (id === 'home' ? '#home' : '#s-' + id);
+f.onload = () => setTimeout(() => {
+  const d = f.contentDocument, W = d.documentElement.clientWidth, res = [];
+  d.querySelectorAll('body *').forEach(el => { const r = el.getBoundingClientRect(); if (r.width && r.right > W + 1) { const p = el.parentElement && el.parentElement.getBoundingClientRect(); if (!p || p.right <= W + 1) res.push(`${el.tagName.toLowerCase()}.${(el.className && el.className.baseVal == null ? el.className : '').toString().replace(/\s+/g, '.')} right=${Math.round(r.right)} w=${Math.round(r.width)} :: ${(el.textContent || '').trim().slice(0, 50)}`); } });
+  document.getElementById('out').textContent = '@@' + 'OUT@@\nviewport=' + W + ' scrollWidth=' + d.documentElement.scrollWidth + '\n' + res.slice(0, 40).join('\n') + '\n@@' + 'END@@';
+}, 2500);
+</script>

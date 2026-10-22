@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><title>RUNNING</title><pre id="out"></pre>
+<script src="../js/core.js"></script><script src="../js/ui.js"></script><script src="../js/db.js"></script>
+<script>
+// Выполняет SQL из ?q= (несколько запросов через ;;) и печатает результат. Запуск: bash _dev/sql.sh "SELECT ..."
+(async () => {
+  const qs = (new URLSearchParams(location.search).get('q') || 'SELECT 1').split(';;');
+  const lines = [];
+  for (const q of qs) {
+    const r = await TR.db.run(q);
+    lines.push('> ' + q.trim());
+    if (!r.ok) lines.push('ERROR: ' + r.error + ' | ' + r.raw);
+    else { lines.push(r.columns.join(' | ')); r.rows.forEach(x => lines.push(x.map(v => v == null ? 'NULL' : v).join(' | '))); lines.push(`(${r.total} rows)`); }
+    lines.push('');
+  }
+  document.getElementById('out').textContent = '@@' + 'OUT@@\n' + lines.join('\n') + '\n@@' + 'END@@';
+})();
+</script>
