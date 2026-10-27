@@ -623,7 +623,7 @@
           function draw() {
             const m = CHAT.find(x => x.id === sel);
             TR.$('[data-chans]', pane).innerHTML = CHANS.map(c => `<div class="m1t-chan ${m.ch.includes(c.id) ? 'on' : ''}"><b>${esc(c.t)}</b><span class="small muted">${esc(c.d)}</span></div>`).join('');
-            TR.$('[data-chat]', pane).innerHTML = `<div class="eyebrow">Чат «Искра Онлайн · команда»</div>${CHAT.map(x => { const p = TR.PEOPLE[x.who]; return `<button type="button" class="m1t-msg" data-msg="${x.id}" aria-pressed="${x.id === sel}"><span class="avatar sm" data-p="${x.who}" aria-hidden="true">${esc(p.ini)}</span><span><span class="who">${esc(p.name)}</span><span class="t" style="display:block">${esc(x.t)}</span></span></button>`; }).join('')}`;
+            TR.$('[data-chat]', pane).innerHTML = `<div class="eyebrow">Чат «Искра Онлайн · команда»</div>${CHAT.map(x => { const p = TR.PEOPLE[x.who]; return `<button type="button" class="m1t-msg" data-msg="${x.id}" aria-pressed="${x.id === sel}"><span class="avatar sm" data-who="${x.who}" aria-hidden="true">${esc(p.ini)}</span><span><span class="who">${esc(p.name)}</span><span class="t" style="display:block">${esc(x.t)}</span></span></button>`; }).join('')}`;
             TR.$('[data-why]', pane).innerHTML = ui.note('ok', 'Куда это должно попасть', m.why);
           }
           TR.on(pane, 'click', '[data-msg]', (e, b) => { sel = b.dataset.msg; draw(); });

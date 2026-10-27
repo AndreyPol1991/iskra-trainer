@@ -42,7 +42,7 @@
   ui.say = (pid, html, opts) => {
     const p = TR.PEOPLE[pid] || { name: pid, role: '', ini: '?' };
     const me = pid === 'me';
-    const av = `<div class="avatar" data-p="${esc(pid)}" aria-hidden="true">${esc(p.ini)}</div>`;
+    const av = `<div class="avatar" data-who="${esc(pid)}" aria-hidden="true">${esc(p.ini)}</div>`;
     const who = opts && opts.noWho ? '' : `<div class="who"><b>${esc(p.name)}</b>${p.role ? ' · ' + esc(p.role) : ''}</div>`;
     const b = `<div class="bubble">${who}<div>${html}</div></div>`;
     return `<div class="say ${me ? 'me' : ''} ${esc(pid)}">${me ? b + av : av + b}</div>`;
