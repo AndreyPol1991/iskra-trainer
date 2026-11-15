@@ -78,6 +78,7 @@
     drawRoute();
     window.scrollTo({ top: 0 });
   }
+  TR.go = go;
   TR.sub('go', id => go(id));
   TR.sub('stages', () => { if (booted) drawRoute(); });
   TR.sub('teacher', () => { drawRoute(); if (current) drawStage(TR.stageById(current)); else drawCover(); });
@@ -528,6 +529,9 @@
 
   // ---------- живая система «Колос» (js/x-system.js) ----------
   $('#sysBtn').addEventListener('click', () => { if (TR.system && TR.system.open) TR.system.open(); else ui.toast('Модель системы ещё не подключена', 'warn'); });
+  // ---------- атлас диаграмм (js/x-atlas.js) ----------
+  const atlasBtn = $('#atlasBtn');
+  if (atlasBtn) atlasBtn.addEventListener('click', () => { if (TR.atlas && TR.atlas.open) TR.atlas.open(); else ui.toast('Атлас диаграмм ещё не подключён', 'warn'); });
 
   // ---------- платформа ampschool.ru: зачёт тренировок в профиль навыков (протокол trainer/1) ----------
   // Тренажёр открыт в рамке платформы → шлём ready, платформа отвечает hello со списком уже зачтённого.
@@ -598,6 +602,8 @@
     const id = h.startsWith('s-') ? h.slice(2) : '';
     go(TR.stageById(id) ? id : '');
     if (h === 'system' && TR.system && TR.system.open) TR.system.open();
+    // #atlas, #atlas-cat, #atlas-cat-sequence — открыть атлас на вкладке и карточке
+    if (/^atlas(-|$)/.test(h) && TR.atlas && TR.atlas.open) { const p = h.split('-'); TR.atlas.open(p[1], p.slice(2).join('-')); }
     platformSend({ kind: 'ready' });
   }
   const start = () => boot();

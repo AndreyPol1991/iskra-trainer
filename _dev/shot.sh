@@ -9,7 +9,7 @@ CHROME="/c/Program Files/Google/Chrome/Application/chrome.exe"
 ID="${1:-home}"; W="${2:-1280}"; H="${3:-6000}"; THEME="${4:-dark}"
 mkdir -p "$(dirname "$0")/shots"
 OUTP="${ROOT//\\//}/_dev/shots/$ID${THEME:+-$THEME}.png"
-HASH="#s-$ID"; [ "$ID" = "home" ] && HASH="#home"; [ "$ID" = "system" ] && HASH="#system"
+HASH="#s-$ID"; [ "$ID" = "home" ] && HASH="#home"; [ "$ID" = "system" ] && HASH="#system"; case "$ID" in atlas*) HASH="#$ID";; esac
 PROFILE="$(mktemp -d)"
 "$CHROME" --headless=new --disable-gpu --no-first-run --no-default-browser-check --allow-file-access-from-files \
   --user-data-dir="$PROFILE" --hide-scrollbars --window-size="$([ "$W" -lt 600 ] && echo 600 || echo "$W"),$H" --virtual-time-budget=15000 \
